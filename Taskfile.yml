@@ -1,0 +1,45 @@
+# https://taskfile.dev
+
+version: "3"
+
+tasks:
+  install:
+    cmds:
+      - go install .
+    silent: true
+  plan:
+    env:
+      TF_LOG_PROVIDER: debug
+      GOOGLE_OAUTH_ACCESS_TOKEN:
+        sh: gcloud auth application-default print-access-token --scopes 'https://www.googleapis.com/auth/cloud-platform'
+    dir: examples/rules
+    cmds:
+      - task: install
+      - terraform plan
+  import:
+    dir: examples/rules
+    env:
+      GOOGLE_OAUTH_ACCESS_TOKEN:
+        sh: gcloud auth application-default print-access-token --scopes 'https://www.googleapis.com/auth/cloud-platform'
+    cmds:
+      - terraform import secops_reference_list.tectonics_sa_allowed_impersonations tectonics_allowed_impersonations
+
+  apply:
+    env:
+      TF_LOG_PROVIDER: debug
+      GOOGLE_OAUTH_ACCESS_TOKEN:
+        sh: gcloud auth application-default print-access-token --scopes 'https://www.googleapis.com/auth/cloud-platform'
+    dir: examples/rules
+    cmds:
+      - task: install
+      - terraform apply
+
+  curl:
+    vars:
+      TOKEN:
+        sh: gcloud auth application-default print-access-token --scopes 'https://www.googleapis.com/auth/cloud-platform'
+    cmds:
+      - 'curl --header "Authorization: Bearer {{.TOKEN}}" {{.CLI_ARGS}}'
+  test:
+    cmds:
+      - go test -race ./...
