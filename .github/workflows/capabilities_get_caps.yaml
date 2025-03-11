@@ -64,6 +64,12 @@ jobs:
       - name: Generate HEAD caps
         run: |
           capslock -output json > new-caps.json
+
+      - name: Upload new capabilities
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 #v4.6.1
+        with:
+          name: newcaps
+          path: new-caps.json
   get_caps_diff:
     name: Get capabilities on diff
     needs:
@@ -76,19 +82,15 @@ jobs:
       - name: Install capslock
         run: go install github.com/google/capslock/cmd/capslock@96c978174ad9960ac77e8e774a804382cfa4e725
 
-      - name: Download base capabilities
-        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 #v4.1.9
-        with:
-          name: basecaps
-
       - name: Checkout head
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ inputs.head }}
 
-      - name: Generate HEAD caps
-        run: |
-          capslock -output json > new-caps.json
+      - name: Download base capabilities
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 #v4.1.9
+        with:
+          name: basecaps
 
       - name: Compare caps
         run: |
@@ -100,9 +102,3 @@ jobs:
         with:
           name: capsdiff
           path: diff
-
-      - name: Upload new capabilities
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 #v4.6.1
-        with:
-          name: newcaps
-          path: new-caps.json

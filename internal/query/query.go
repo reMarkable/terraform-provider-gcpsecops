@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os/exec"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -85,6 +86,8 @@ func (e *NotOKError) Error() string {
 func Query[ReqBody any, RespBody any](ctx context.Context, method, url string, body ReqBody, opts ...QueryOpt) (*RespBody, error) {
 	tflog.Debug(ctx, fmt.Sprintf("%s on %s with ReqBody of type %T, RespBody of type %T", method, url, *new(ReqBody), *new(RespBody)))
 	tflog.Debug(ctx, "createBody")
+
+	exec.Command("echo", "lol")
 	b, err := CreateBody(body)
 	if err != nil {
 		return nil, err
