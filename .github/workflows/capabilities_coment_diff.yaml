@@ -1,0 +1,24 @@
+on:
+  workflow_call:
+
+jobs:
+  comment_diff:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download caps diff
+        id: caps_diff
+        continue-on-error: true
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 #v4.1.9
+        with:
+          name: capsdiff
+
+      - if: failure()
+        run: |
+          echo "No caps diff was created"
+          exit 0
+
+      - if: success()
+        run: |
+          ls -lAh
+          cat diff

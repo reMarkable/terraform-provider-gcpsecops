@@ -1,0 +1,108 @@
+name: Get Capabilities
+
+on:
+  workflow_call:
+    inputs:
+      base:
+        type: string
+        required: true
+      head:
+        type: string
+        required: true
+jobs:
+  get_base_caps:
+    name: Get capabilities on base branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Go
+        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34
+
+      - name: Install capslock
+        run: go install github.com/google/capslock/cmd/capslock@96c978174ad9960ac77e8e774a804382cfa4e725
+
+      - name: Checkout base
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.base }}
+
+      - name: Get base caps
+        continue-on-error: true # Reading caps fails in the case where it's not yet checked in. we simply generate them if they dont exist, so this failure is false
+        run: |
+          cp caps.json base-caps.json
+
+      # We compute from the commit in base if there's no existing caps file checked in
+      - name: Compute base caps
+        run: |
+          if test -f base-caps.json; then
+            exit 0
+          else
+            capslock -output json > base-caps.json
+          fi
+
+      - name: Upload base capabilities
+        if: always()
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 #v4.6.1
+        with:
+          name: basecaps
+          path: base-caps.json
+          if-no-files-found: error #there should always be base caps present, either checked in or computed
+  get_new_caps:
+    runs-on: ubuntu-latest
+    name: Get capabilities on head branch
+    steps:
+      - name: Checkout head
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.head }}
+
+      - name: Setup Go
+        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34
+
+      - name: Install capslock
+        run: go install github.com/google/capslock/cmd/capslock@96c978174ad9960ac77e8e774a804382cfa4e725
+
+      - name: Generate HEAD caps
+        run: |
+          capslock -output json > new-caps.json
+  get_caps_diff:
+    name: Get capabilities on diff
+    needs:
+      - get_base_caps
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Go
+        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34
+
+      - name: Install capslock
+        run: go install github.com/google/capslock/cmd/capslock@96c978174ad9960ac77e8e774a804382cfa4e725
+
+      - name: Download base capabilities
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 #v4.1.9
+        with:
+          name: basecaps
+
+      - name: Checkout head
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.head }}
+
+      - name: Generate HEAD caps
+        run: |
+          capslock -output json > new-caps.json
+
+      - name: Compare caps
+        run: |
+          # Compare fails if there are new caps. We don't want to fail here if that's the case
+          capslock -output compare base-caps.json > diff || exit 0
+
+      - name: Upload diff
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 #v4.6.1
+        with:
+          name: capsdiff
+          path: diff
+
+      - name: Upload new capabilities
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 #v4.6.1
+        with:
+          name: newcaps
+          path: new-caps.json
