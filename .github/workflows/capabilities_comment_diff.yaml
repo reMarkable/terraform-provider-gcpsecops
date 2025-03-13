@@ -28,9 +28,12 @@ jobs:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             const content = `
-            \`\`\`
+            <details open>
+            <summary>
+              :warning: New capabilities detected
+            </summary>
             ${Buffer.from("${{ steps.read_diff.outputs.diff }}", "base64").toString()}
-            \`\`\`
+            </details>
             `
             github.rest.pulls.createReview({
               owner: context.repo.owner,
