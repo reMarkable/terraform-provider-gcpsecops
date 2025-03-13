@@ -27,7 +27,11 @@ jobs:
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            const content = `${Buffer.from("${{ steps.read_diff.outputs.diff }}", "base64").toString()}`
+            const content = `
+            \`\`\`
+            ${Buffer.from("${{ steps.read_diff.outputs.diff }}", "base64").toString()}
+            \`\`\`
+            `
             github.rest.pulls.createReview({
               owner: context.repo.owner,
               repo: context.repo.repo,
